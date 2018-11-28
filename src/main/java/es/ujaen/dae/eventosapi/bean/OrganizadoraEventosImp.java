@@ -86,7 +86,7 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public long identificarUsuario(String dni, String password)
+    public UsuarioDTO identificarUsuario(String dni, String password)
             throws UsuarioNoRegistradoNoEncontradoException, CamposVaciosException {
         Usuario usuario;
         long respuesta = 0;
@@ -105,7 +105,7 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
         } else {
             throw new CamposVaciosException();
         }
-        return respuesta;
+        return new UsuarioDTO(usuario);
     }
 
     public boolean cerrarSesion(long token) {

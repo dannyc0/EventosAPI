@@ -19,7 +19,7 @@ public interface OrganizadoraEventosService {
     /////////////////////////
     public void registrarUsuario(UsuarioDTO usuarioDTO, String password) throws CamposVaciosException;// Probado
 
-    public long identificarUsuario(String dni, String password)
+    public UsuarioDTO identificarUsuario(String dni, String password)
             throws UsuarioNoRegistradoNoEncontradoException, CamposVaciosException;// Probado
 
     public boolean cerrarSesion(long token);// Probado

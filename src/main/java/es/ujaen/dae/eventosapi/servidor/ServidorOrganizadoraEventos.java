@@ -15,8 +15,8 @@ import org.springframework.cache.annotation.EnableCaching;
 @EnableAutoConfiguration
 @EnableConfigurationProperties
 @EnableCaching
-@ComponentScan({"es.ujaen.dae.eventosconsolamail.bean", "es.ujaen.dae.eventosconsolamail.dao"})
-@EntityScan(basePackages = {"es.ujaen.dae.eventosconsolamail.modelo"})
+@ComponentScan({"es.ujaen.dae.eventosapi.bean", "es.ujaen.dae.eventosapi.dao","es.ujaen.dae.eventosapi.recursos"})
+@EntityScan(basePackages = {"es.ujaen.dae.eventosapi.modelo"})
 @SpringBootApplication
 public class ServidorOrganizadoraEventos {
 
