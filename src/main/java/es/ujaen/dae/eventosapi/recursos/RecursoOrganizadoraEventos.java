@@ -18,6 +18,12 @@ import es.ujaen.dae.eventosapi.modelo.Usuario;
 @RestController
 @RequestMapping("/organizadoraeventos")
 public class RecursoOrganizadoraEventos {
+	
+	@RequestMapping(value="/foo", method=RequestMethod.GET,produces="application/json")
+	public String[] foo() {
+	    String[] arr = { "foo", "foo2" };
+	    return arr;
+	}
 
 	OrganizadoraEventosImp organizadoraEventos;
 	@RequestMapping(value="/eventos/{attr}",method=RequestMethod.GET,produces="application/json")
