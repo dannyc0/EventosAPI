@@ -2,6 +2,7 @@ package es.ujaen.dae.eventosapi.recursos;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,13 +20,9 @@ import es.ujaen.dae.eventosapi.modelo.Usuario;
 @RequestMapping("/organizadoraeventos")
 public class RecursoOrganizadoraEventos {
 	
-	@RequestMapping(value="/foo", method=RequestMethod.GET,produces="application/json")
-	public String[] foo() {
-	    String[] arr = { "foo", "foo2" };
-	    return arr;
-	}
-
+	@Autowired
 	OrganizadoraEventosImp organizadoraEventos;
+
 	@RequestMapping(value="/eventos/{attr}",method=RequestMethod.GET,produces="application/json")
 	public List<EventoDTO> obtenerEvento(@PathVariable String attr) {
 		List<EventoDTO> eventos = organizadoraEventos.buscarEvento(attr);
@@ -38,12 +35,7 @@ public class RecursoOrganizadoraEventos {
 		try {
 			usuario = organizadoraEventos.identificarUsuario(dni, "aaaa");
 		} catch (UsuarioNoRegistradoNoEncontradoException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CamposVaciosException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} catch (CamposVaciosException e) {}
 		return usuario;
 	}
 	
