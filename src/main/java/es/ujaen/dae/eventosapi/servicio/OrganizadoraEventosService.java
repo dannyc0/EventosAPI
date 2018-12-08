@@ -8,7 +8,6 @@ import es.ujaen.dae.eventosapi.exception.CamposVaciosException;
 import es.ujaen.dae.eventosapi.exception.CancelacionInvalidaException;
 import es.ujaen.dae.eventosapi.exception.FechaInvalidaException;
 import es.ujaen.dae.eventosapi.exception.InscripcionInvalidaException;
-import es.ujaen.dae.eventosapi.exception.SesionNoIniciadaException;
 import es.ujaen.dae.eventosapi.exception.UsuarioNoRegistradoNoEncontradoException;
 
 public interface OrganizadoraEventosService {
@@ -17,21 +16,24 @@ public interface OrganizadoraEventosService {
     // public void obtenerUsuarios();
     // public void obtenerEventos();
     /////////////////////////
-    public void registrarUsuario(UsuarioDTO usuarioDTO, String password) throws CamposVaciosException;// Probado
+    public void registrarUsuario(UsuarioDTO usuarioDTO);// Probado
+    
+    public UsuarioDTO obtenerUsuario(String dni);
 
-    public void crearEvento(EventoDTO eventoDTO)
-            throws CamposVaciosException, SesionNoIniciadaException, FechaInvalidaException;// Probado
+    public void crearEvento(EventoDTO eventoDTO);// Probado
 
-    public void inscribirEvento(EventoDTO eventoDTO)
-            throws InscripcionInvalidaException, SesionNoIniciadaException, FechaInvalidaException;// Probado
+    public void inscribirEvento(int id, String dni)
+            throws InscripcionInvalidaException;// Probado
 
-    public void cancelarInscripcion(EventoDTO eventoDTO)
-            throws CancelacionInvalidaException, SesionNoIniciadaException, UsuarioNoRegistradoNoEncontradoException;// Probado
+    public void cancelarInscripcion(int id, String dni)
+            throws CancelacionInvalidaException, UsuarioNoRegistradoNoEncontradoException;// Probado
 
     public List<EventoDTO> buscarEvento(String attr);// Probado
+    
+    public EventoDTO buscarEventoPorId(int id);// Probado
 
-    public void cancelarEvento(EventoDTO eventoDTO)
-            throws CancelacionInvalidaException, SesionNoIniciadaException;// Probado
+    public void cancelarEvento(int id)
+            throws CancelacionInvalidaException;// Probado
 
     public List<EventoDTO> listarEventoInscritoCelebrado();// Probado
 

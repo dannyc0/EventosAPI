@@ -9,9 +9,8 @@ package es.ujaen.dae.eventosapi.exception;
  *
  * @author EnriqueS
  */
-public class SesionNoIniciadaException extends Exception {
+public class UsuarioExistente extends Exception {
 
-    public SesionNoIniciadaException() {
+    public UsuarioExistente() {
     }
-
 }

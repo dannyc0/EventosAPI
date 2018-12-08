@@ -18,7 +18,6 @@ import es.ujaen.dae.eventosapi.exception.CamposVaciosException;
 import es.ujaen.dae.eventosapi.exception.CancelacionInvalidaException;
 import es.ujaen.dae.eventosapi.exception.FechaInvalidaException;
 import es.ujaen.dae.eventosapi.exception.InscripcionInvalidaException;
-import es.ujaen.dae.eventosapi.exception.SesionNoIniciadaException;
 import es.ujaen.dae.eventosapi.exception.UsuarioNoRegistradoNoEncontradoException;
 import es.ujaen.dae.eventosapi.modelo.Evento;
 import es.ujaen.dae.eventosapi.modelo.Usuario;
@@ -67,78 +66,59 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public void registrarUsuario(UsuarioDTO usuarioDTO, String password) throws CamposVaciosException {
+    public void registrarUsuario(UsuarioDTO usuarioDTO){
         Usuario usuario = usuarioDTO.toEntity();
-
-        // Valida campos vacios
-        if (usuario.getDni() != null && !usuario.getDni().isEmpty() && password != null && !password.isEmpty()
-                && usuario.getNombre() != null && !usuario.getNombre().isEmpty()) {
-            usuario.setPassword(password);
-            usuarioDAO.insertar(usuario);
-        } else {
-            throw new CamposVaciosException();
-        }
+        usuarioDAO.insertar(usuario);
     }
 
-    public UsuarioDTO obtenerUsuario(String dni) throws CamposVaciosException {
+    public UsuarioDTO obtenerUsuario(String dni){
         // Valida campos vacios
-        if (!dni.isEmpty()) {
-        	return new UsuarioDTO(usuarioDAO.buscar(dni));
-        } else {
-            throw new CamposVaciosException();
-        }
+    	Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
+    	
+    	return usuarioDTO;
     }
 
     // DAO Listo
-    public void crearEvento(EventoDTO eventoDTO)
-            throws CamposVaciosException, SesionNoIniciadaException, FechaInvalidaException {
+    public void crearEvento(EventoDTO eventoDTO){
         Evento evento = eventoDTO.toEntity();
-        String mensaje = "";
-        // Valida si hay campos vacios
-        if (evento.getNombre() != null && !evento.getNombre().isEmpty() && evento.getDescripcion() != null
-                && !evento.getDescripcion().isEmpty() && evento.getFecha() != null && !evento.getFecha().isEmpty()
-                && evento.getLugar() != null && !evento.getLugar().isEmpty() && evento.getCupo() != 0) {
-            eventoDAO.insertar(evento);
-        } else {
-            throw new CamposVaciosException();
-        }
+        eventoDAO.insertar(evento);
     }
-
    
-    public void inscribirEvento(EventoDTO eventoDTO)
-            throws InscripcionInvalidaException, SesionNoIniciadaException, FechaInvalidaException {
-        Evento evento = eventoDTO.toEntity();
-        evento = eventoDAO.buscar(evento.getId());
+    public void inscribirEvento(int id, String dni)
+            throws InscripcionInvalidaException{
+        Evento evento = null;
+        Usuario usuario = null;
+        
+        evento = eventoDAO.buscar(id);
+        usuario = usuarioDAO.buscar(dni);
         
         //CAMBIAR
-        Usuario usuario = null;
-
-        // Valida si el evento aun no se ha celebrado por la fecha
-        if (eventoDAO.buscar(evento.getId()).compararConFechaActual()) {
-            // Valida si el usuario no esta ya inscrito en la lista de invitados
-            if (!eventoDAO.validarInvitadoLista(evento, usuario)) {
-                // Valida que haya cupo para entrar al evento
-                if (eventoDAO.obtenerSaturacion(evento) < evento.getCupo()) {
-                    eventoDAO.inscribirInvitado(evento, usuario);
-                } else {
-                    eventoDAO.inscribirEspera(evento, usuario);
-                }
+        // Valida si el usuario no esta ya inscrito en la lista de invitados
+        if (!eventoDAO.validarInvitadoLista(evento, usuario)) {
+            // Valida que haya cupo para entrar al evento
+            if (eventoDAO.obtenerSaturacion(evento) < evento.getCupo()) {
+                eventoDAO.inscribirInvitado(evento, usuario);
             } else {
-                throw new InscripcionInvalidaException();
+                eventoDAO.inscribirEspera(evento, usuario);
             }
         } else {
-            throw new FechaInvalidaException();
+            throw new InscripcionInvalidaException();
         }
     }
 
     // DAO Listo
-    public void cancelarInscripcion(EventoDTO eventoDTO)
-            throws CancelacionInvalidaException, SesionNoIniciadaException, UsuarioNoRegistradoNoEncontradoException {
-        Evento evento = eventoDTO.toEntity();
-        evento = eventoDAO.buscar(evento.getId());
-        
-        //CAMBIAR
+    public void cancelarInscripcion(int id, String dni)
+            throws CancelacionInvalidaException, UsuarioNoRegistradoNoEncontradoException {
+    	Evento evento = null;
         Usuario usuarioCancela = null;
+        
+        evento = eventoDAO.buscar(id);
+        usuarioCancela = usuarioDAO.buscar(dni);
 
         // Valida si el usuario se encuentra en la lista de invitados
         if (eventoDAO.validarInvitadoLista(evento, usuarioCancela)) {
@@ -178,6 +158,17 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
 
         eventoDAO.sacarDeListaDeEspera(eventoDAO.obtenerDatosListaEsperaParaCancelar(evento, usuario), evento);
     }
+    
+    public EventoDTO buscarEventoPorId(int id) {
+    	Evento evento = eventoDAO.buscar(id);
+    	EventoDTO eventoDTO = null;
+    	
+    	if (evento!=null) {
+    		eventoDTO = new EventoDTO(evento);
+		}
+    	
+    	return eventoDTO;
+    }
 
     // DAO Listo
     public List<EventoDTO> buscarEvento(String attr) {
@@ -191,10 +182,11 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public void cancelarEvento(EventoDTO eventoDTO)
-            throws CancelacionInvalidaException, SesionNoIniciadaException {
-        Evento evento = eventoDTO.toEntity();
-        if (eventoDAO.buscar(evento.getId()).compararConFechaActual()) {
+    public void cancelarEvento(int id)
+            throws CancelacionInvalidaException {
+    	Evento evento = eventoDAO.buscar(id);
+    	
+        if (evento !=null && eventoDAO.buscar(evento.getId()).compararConFechaActual()) {
         	eventoDAO.borrar(evento);
         } else {
             throw new CancelacionInvalidaException();

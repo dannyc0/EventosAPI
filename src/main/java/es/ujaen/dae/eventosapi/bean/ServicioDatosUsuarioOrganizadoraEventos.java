@@ -20,9 +20,7 @@ public class ServicioDatosUsuarioOrganizadoraEventos implements UserDetailsServi
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
 		Usuario usuario = null;
-		try {
-			usuario = organizadoraEventos.obtenerUsuario(username).toEntity();
-		} catch (CamposVaciosException e) {}
+		usuario = organizadoraEventos.obtenerUsuario(username).toEntity();
 		
 		if(usuario==null) {
 			throw new UsernameNotFoundException(username);

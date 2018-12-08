@@ -65,6 +65,9 @@ public class EventoDAO {
             em.persist(evento);
             em.flush();
         } catch (Exception e) {
+        	System.out.println(e.getMessage());
+
+        	System.out.println(evento.toString());
             throw new ErrorCreacionEvento();
         }
     }
