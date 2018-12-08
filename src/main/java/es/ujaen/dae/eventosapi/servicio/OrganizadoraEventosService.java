@@ -19,38 +19,33 @@ public interface OrganizadoraEventosService {
     /////////////////////////
     public void registrarUsuario(UsuarioDTO usuarioDTO, String password) throws CamposVaciosException;// Probado
 
-    public UsuarioDTO identificarUsuario(String dni, String password)
-            throws UsuarioNoRegistradoNoEncontradoException, CamposVaciosException;// Probado
-
-    public boolean cerrarSesion(long token);// Probado
-
-    public void crearEvento(EventoDTO eventoDTO, long token)
+    public void crearEvento(EventoDTO eventoDTO)
             throws CamposVaciosException, SesionNoIniciadaException, FechaInvalidaException;// Probado
 
-    public void inscribirEvento(EventoDTO eventoDTO, long token)
+    public void inscribirEvento(EventoDTO eventoDTO)
             throws InscripcionInvalidaException, SesionNoIniciadaException, FechaInvalidaException;// Probado
 
-    public void cancelarInscripcion(EventoDTO eventoDTO, long token)
+    public void cancelarInscripcion(EventoDTO eventoDTO)
             throws CancelacionInvalidaException, SesionNoIniciadaException, UsuarioNoRegistradoNoEncontradoException;// Probado
 
     public List<EventoDTO> buscarEvento(String attr);// Probado
 
-    public void cancelarEvento(EventoDTO eventoDTO, long token)
+    public void cancelarEvento(EventoDTO eventoDTO)
             throws CancelacionInvalidaException, SesionNoIniciadaException;// Probado
 
-    public List<EventoDTO> listarEventoInscritoCelebrado(long token);// Probado
+    public List<EventoDTO> listarEventoInscritoCelebrado();// Probado
 
-    public List<EventoDTO> listarEventoInscritoPorCelebrar(long token);// Probado
+    public List<EventoDTO> listarEventoInscritoPorCelebrar();// Probado
 
-    public List<EventoDTO> listarEventoEsperaPorCelebrar(long token); // Probado
+    public List<EventoDTO> listarEventoEsperaPorCelebrar(); // Probado
 
-    public List<EventoDTO> listarEventoEsperaCelebrado(long token); // Probado
+    public List<EventoDTO> listarEventoEsperaCelebrado(); // Probado
 
-    public List<EventoDTO> listarEventoOrganizadoCelebrado(long token);// Probado
+    public List<EventoDTO> listarEventoOrganizadoCelebrado();// Probado
 
-    public List<EventoDTO> listarEventoOrganizadoPorCelebrar(long token);// Probado
+    public List<EventoDTO> listarEventoOrganizadoPorCelebrar();// Probado
 
-    public void cancelarListaEspera(EventoDTO eventoDTO, long token) throws CancelacionInvalidaException;
+    public void cancelarListaEspera(EventoDTO eventoDTO) throws CancelacionInvalidaException;
 
     /*
 	 * Corregido: El metodo validar fecha no funcionaba correctamente, la lógica

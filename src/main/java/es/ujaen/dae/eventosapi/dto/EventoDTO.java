@@ -26,31 +26,20 @@ public class EventoDTO {
         this.fecha = evento.getFecha();
         this.tipo = evento.getTipo();
         this.cupo = evento.getCupo();
-
-        // this.organizador= new UsuarioDTO(evento.getOrganizador());
+        if(evento.getOrganizador() != null) {
+        	this.organizador= new UsuarioDTO(evento.getOrganizador());
+        }
     }
 
-    public EventoDTO(int id, String nombre, String descripcion, String lugar, String fecha, String tipo, int cupo) {
-        this.id = id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.lugar = lugar;
-        this.fecha = fecha;
-        this.tipo = tipo;
-        this.cupo = cupo;
-        // this.organizador = usuario;
-    }
+    public UsuarioDTO getOrganizador() {
+		return organizador;
+	}
 
-    public EventoDTO(String nombre, String descripcion, String lugar, String fecha, String tipo, int cupo) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.lugar = lugar;
-        this.fecha = fecha;
-        this.tipo = tipo;
-        this.cupo = cupo;
-    }
+	public void setOrganizador(UsuarioDTO organizador) {
+		this.organizador = organizador;
+	}
 
-    public int getId() {
+	public int getId() {
         return id;
     }
 

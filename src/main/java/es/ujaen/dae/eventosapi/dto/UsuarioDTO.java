@@ -8,15 +8,9 @@ public class UsuarioDTO {
     String nombre;
     String correo;
     String telefono;
+    String password;
 
     public UsuarioDTO() {
-    }
-
-    public UsuarioDTO(String dni, String nombre, String correo, String telefono) {
-        this.dni = dni;
-        this.nombre = nombre;
-        this.correo = correo;
-        this.telefono = telefono;
     }
 
     public UsuarioDTO(Usuario usuario) {
@@ -24,10 +18,19 @@ public class UsuarioDTO {
         this.nombre = usuario.getNombre();
         this.correo = usuario.getCorreo();
         this.telefono = usuario.getTelefono();
+        this.password = usuario.getPassword();
 
     }
 
-    public String getDni() {
+    public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getDni() {
         return dni;
     }
 
@@ -76,6 +79,7 @@ public class UsuarioDTO {
         usuario.setNombre(nombre);
         usuario.setCorreo(correo);
         usuario.setTelefono(telefono);
+        usuario.setPassword(password);
 
         return usuario;
     }

@@ -23,7 +23,6 @@ public class UsuarioDAO {
     // Buscar evento
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public Usuario buscar(String dni) {
-
         return em.find(Usuario.class, dni);
     }
 
