@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import es.ujaen.dae.eventosapi.exception.CamposVaciosException;
+import es.ujaen.dae.eventosapi.exception.UsuarioNoRegistradoNoEncontradoException;
 import es.ujaen.dae.eventosapi.modelo.Usuario;
 
 @Component
@@ -20,7 +21,9 @@ public class ServicioDatosUsuarioOrganizadoraEventos implements UserDetailsServi
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
 		Usuario usuario = null;
-		usuario = organizadoraEventos.obtenerUsuario(username).toEntity();
+		try {
+			usuario = organizadoraEventos.obtenerUsuario(username).toEntity();
+		} catch (UsuarioNoRegistradoNoEncontradoException e) {} catch (CamposVaciosException e) {}
 		
 		if(usuario==null) {
 			throw new UsernameNotFoundException(username);

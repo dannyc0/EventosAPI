@@ -1,8 +1,11 @@
 package es.ujaen.dae.eventosapi.recursos;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,8 +17,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.mysql.fabric.xmlrpc.base.Array;
 
 import es.ujaen.dae.eventosapi.bean.OrganizadoraEventosImp;
 import es.ujaen.dae.eventosapi.dto.EventoDTO;
@@ -30,6 +36,7 @@ import es.ujaen.dae.eventosapi.exception.UsuarioIncorrecto;
 import es.ujaen.dae.eventosapi.exception.UsuarioNoRegistradoNoEncontradoException;
 import es.ujaen.dae.eventosapi.modelo.Evento;
 import es.ujaen.dae.eventosapi.modelo.Usuario;
+import javassist.expr.NewArray;
 
 @RestController
 @RequestMapping("/organizadoraeventos")
@@ -62,19 +69,23 @@ public class RecursoOrganizadoraEventos {
 			throw new UsuarioExistente();
 		}
 		
-		// Valida campos vacios
-        if (usuarioDTO.getDni() != null && !usuarioDTO.getDni().isEmpty() && usuarioDTO.getPassword() != null && !usuarioDTO.getPassword().isEmpty()
-                && usuarioDTO.getNombre() != null && !usuarioDTO.getNombre().isEmpty()) {
-        	organizadoraEventos.registrarUsuario(usuarioDTO);
-        } else {
-            throw new CamposVaciosException();
-        }
+		try {
+			organizadoraEventos.registrarUsuario(usuarioDTO);
+		} catch (Exception e) {
+			throw new CamposVaciosException();
+		}
 	}
 	
-	//Crear evento
+	//Obtener usuario
 	@RequestMapping(value="/usuario/{dni}",method=RequestMethod.GET,produces="application/json")
-	public UsuarioDTO obtenerUsuario(@PathVariable String dni) throws UsuarioNoRegistradoNoEncontradoException{
-		UsuarioDTO usuario = organizadoraEventos.obtenerUsuario(dni);
+	public UsuarioDTO obtenerUsuario(@PathVariable String dni) throws UsuarioNoRegistradoNoEncontradoException, CamposVaciosException{
+		UsuarioDTO usuario = null;
+		try {
+			usuario = organizadoraEventos.obtenerUsuario(dni);
+		} catch (Exception e) {
+			throw new CamposVaciosException();
+		}
+		
 		if (usuario==null) {
 			throw new UsuarioNoRegistradoNoEncontradoException();
 		}
@@ -82,18 +93,12 @@ public class RecursoOrganizadoraEventos {
 	}
 
 	//Buscar evento
-	@RequestMapping(value="/eventos/{attr}",method=RequestMethod.GET,produces="application/json")
-	public List<EventoDTO> obtenerEvento(@PathVariable String attr) throws EventoInexistenteException{
-		String usuario;
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		
-		if (auth instanceof AnonymousAuthenticationToken) {
-			usuario = "anonimo";
-		}else {
-			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-			usuario = userDetails.getUsername();
-		}
-		List<EventoDTO> eventos = organizadoraEventos.buscarEvento(attr);
+	@RequestMapping(value="/eventos",method=RequestMethod.GET,produces="application/json")
+	public List<EventoDTO> obtenerEvento(@RequestParam(value="tipo", required = false) String tipo, 
+			@RequestParam(value="descripcion", required = false) String desc) 
+					throws EventoInexistenteException{
+		//if
+		List<EventoDTO> eventos = organizadoraEventos.buscarEventoPorTipo();
 		
 		if (eventos.isEmpty()) {
 			throw new EventoInexistenteException();
@@ -102,10 +107,29 @@ public class RecursoOrganizadoraEventos {
 		return eventos;
 	}
 	
+	//Buscar evento
+	@RequestMapping(value="/evento/{id}",method=RequestMethod.GET,produces="application/json")
+	public EventoDTO obtenerEventoPorId(@PathVariable String id) throws EventoInexistenteException, NumberFormatException{
+		int id_numero;
+		try {
+			id_numero = Integer.parseInt(id);
+		} catch (NumberFormatException e) {
+			throw new NumberFormatException();
+		}
+		
+		EventoDTO evento = organizadoraEventos.buscarEventoPorId(id_numero);
+		
+		if (evento==null) {
+			throw new EventoInexistenteException();
+		}
+		
+		return evento;
+	}
+	
 	//Crear evento
 	@RequestMapping(value="/eventos",method=RequestMethod.POST,produces="application/json")
 	@ResponseStatus(code = HttpStatus.CREATED)
-	public void crearEvento(@RequestBody EventoDTO eventoDTO) throws FechaInvalidaException{
+	public void crearEvento(@RequestBody EventoDTO eventoDTO) throws FechaInvalidaException, UsuarioNoRegistradoNoEncontradoException, CamposVaciosException{
 		String usuario;
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		
@@ -115,16 +139,21 @@ public class RecursoOrganizadoraEventos {
 			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			usuario = userDetails.getUsername();
 		}
-		UsuarioDTO organizador = organizadoraEventos.obtenerUsuario(usuario);
-		eventoDTO.setOrganizador(organizador);
+		try {
+			UsuarioDTO organizador = organizadoraEventos.obtenerUsuario(usuario);
+			eventoDTO.setOrganizador(organizador);
+			organizadoraEventos.crearEvento(eventoDTO);
+		} catch (Exception e) {
+			throw new CamposVaciosException();
+		}
 		
-		organizadoraEventos.crearEvento(eventoDTO);
+		
 	}
 	
 	//Inscribir evento
 	@RequestMapping(value="/eventos/{id}",method=RequestMethod.PUT,produces="application/json")
 	@ResponseStatus(code = HttpStatus.ACCEPTED)
-	public void inscribirEvento(@PathVariable String id) throws NumberFormatException, InscripcionInvalidaException{
+	public void inscribirEvento(@PathVariable String id) throws NumberFormatException, InscripcionInvalidaException, FechaInvalidaException{
 		String usuario;
 		int id_numero;
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -146,14 +175,26 @@ public class RecursoOrganizadoraEventos {
 			organizadoraEventos.inscribirEvento(id_numero, usuario);
 		} catch (InscripcionInvalidaException e) {
 			throw new InscripcionInvalidaException();
+		} catch (FechaInvalidaException e) {
+			throw new FechaInvalidaException();
 		}
 	}
 	
 	//Cancelar inscripcion
-	@RequestMapping(value="usuario/{dni}/eventosinscrito/{id}",method=RequestMethod.PUT,produces="application/json")
+	@RequestMapping(value="usuario/eventosinscrito/{id}",method=RequestMethod.DELETE,produces="application/json")
 	@ResponseStatus(code = HttpStatus.ACCEPTED)
-	public void cancelarInscripcionEvento(@PathVariable String dni,@PathVariable String id) throws NumberFormatException, EventoInexistenteException, CancelacionInvalidaException{
+	public void cancelarInscripcionEvento(@PathVariable String id) throws NumberFormatException, EventoInexistenteException, CancelacionInvalidaException{
+		
+		String usuario;
 		int id_numero;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (auth instanceof AnonymousAuthenticationToken) {
+			usuario = "anonimo";
+		}else {
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			usuario = userDetails.getUsername();
+		}
 		
 		try {
 			id_numero = Integer.parseInt(id);
@@ -166,18 +207,26 @@ public class RecursoOrganizadoraEventos {
 		}
 		
 		try {
-			organizadoraEventos.cancelarInscripcion(id_numero,dni);
+			organizadoraEventos.cancelarInscripcion(id_numero,usuario);
 		} catch (CancelacionInvalidaException e) {
 			throw new CancelacionInvalidaException();
 		}
 	}
 	
 	//Cancelar EVENTO
-	@RequestMapping(value="usuario/{dni}/eventosorganizados/{id}",method=RequestMethod.DELETE,produces="application/json")
+	@RequestMapping(value="usuario/eventosorganizados/{id}",method=RequestMethod.DELETE,produces="application/json")
 	@ResponseStatus(code = HttpStatus.ACCEPTED)
-	public void cancelarEvento(@PathVariable String dni,@PathVariable String id) throws NumberFormatException, EventoInexistenteException, CancelacionInvalidaException{
+	public void cancelarEvento(@PathVariable String id) throws NumberFormatException, EventoInexistenteException, CancelacionInvalidaException{
 		int id_numero;
+		String usuario;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		
+		if (auth instanceof AnonymousAuthenticationToken) {
+			usuario = "anonimo";
+		}else {
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			usuario = userDetails.getUsername();
+		}
 		try {
 			id_numero = Integer.parseInt(id);
 		} catch (NumberFormatException e) {
@@ -189,7 +238,7 @@ public class RecursoOrganizadoraEventos {
 		}
 		
 		try {
-			organizadoraEventos.cancelarEvento(id_numero);
+			organizadoraEventos.cancelarEvento(id_numero, usuario);
 		} catch (CancelacionInvalidaException e) {
 			throw new CancelacionInvalidaException();
 		}
@@ -198,5 +247,69 @@ public class RecursoOrganizadoraEventos {
 	@RequestMapping(method=RequestMethod.GET, produces="application/json")
 	public OrganizadoraEventosImp obtenerOrganizadora() {
 		return organizadoraEventos;
+	}
+	
+	@RequestMapping(value="usuario/eventosinscrito",method=RequestMethod.GET,produces="application/json")
+	public List<Link> listarEventosInscrito(@RequestParam(value="celebrado", required = false, defaultValue = "false") boolean celebrado) throws EventoInexistenteException{
+		String usuario;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (auth instanceof AnonymousAuthenticationToken) {
+			usuario = "anonimo";
+		}else {
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			usuario = userDetails.getUsername();
+		}
+		List<EventoDTO> lista = null;
+		List<Link> listaLinks=  new ArrayList<Link>();
+		if(celebrado) {
+			lista= organizadoraEventos.listarEventoInscritoCelebrado(usuario);			
+		}else {
+			lista= organizadoraEventos.listarEventoInscritoPorCelebrar(usuario);
+		}
+		
+		for (EventoDTO evento: lista) {
+			listaLinks.add(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(
+					RecursoOrganizadoraEventos.class).obtenerEventoPorId(evento.getId()+"")).withSelfRel());
+		}
+		return listaLinks;
+	
+	}
+	@RequestMapping(value="usuario/eventosespera",method=RequestMethod.GET,produces="application/json")
+	public List<EventoDTO> listarEventosEspera(@RequestParam(value="celebrado", required = false, defaultValue = "false") boolean celebrado) throws EventoInexistenteException{
+		String usuario;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (auth instanceof AnonymousAuthenticationToken) {
+			usuario = "anonimo";
+		}else {
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			usuario = userDetails.getUsername();
+		}
+		if(celebrado) {
+			return organizadoraEventos.listarEventoEsperaCelebrado(usuario);			
+		}else {
+			return organizadoraEventos.listarEventoEsperaPorCelebrar(usuario);
+		}
+	
+	}
+	
+	@RequestMapping(value="usuario/eventosorganizados",method=RequestMethod.GET,produces="application/json")
+	public List<EventoDTO> listarEventosOrganizados(@RequestParam(value="celebrado", required = false, defaultValue = "false") boolean celebrado) throws EventoInexistenteException{
+		String usuario;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (auth instanceof AnonymousAuthenticationToken) {
+			usuario = "anonimo";
+		}else {
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			usuario = userDetails.getUsername();
+		}
+		if(celebrado) {
+			return organizadoraEventos.listarEventoOrganizadoCelebrado(usuario);			
+		}else {
+			return organizadoraEventos.listarEventoOrganizadoPorCelebrar(usuario);
+		}
+	
 	}
 }

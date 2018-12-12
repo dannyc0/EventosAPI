@@ -66,15 +66,26 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public void registrarUsuario(UsuarioDTO usuarioDTO){
+    public void registrarUsuario(UsuarioDTO usuarioDTO)throws CamposVaciosException{
         Usuario usuario = usuarioDTO.toEntity();
-        usuarioDAO.insertar(usuario);
+     // Valida campos vacios
+        if (usuarioDTO.getDni() != null && !usuarioDTO.getDni().isEmpty() && usuarioDTO.getPassword() != null && !usuarioDTO.getPassword().isEmpty()
+                && usuarioDTO.getNombre() != null && !usuarioDTO.getNombre().isEmpty()) {
+        	usuarioDAO.insertar(usuario);
+        } else {
+            throw new CamposVaciosException();
+        }
+        
     }
 
-    public UsuarioDTO obtenerUsuario(String dni){
+    public UsuarioDTO obtenerUsuario(String dni)throws CamposVaciosException, UsuarioNoRegistradoNoEncontradoException{
         // Valida campos vacios
     	Usuario usuario = usuarioDAO.buscar(dni);
     	UsuarioDTO usuarioDTO = null;
+    	
+    	if (dni.isEmpty()) {
+			throw new CamposVaciosException();
+		}
     	
     	if (usuario!=null) {
     		usuarioDTO = new UsuarioDTO(usuario);
@@ -84,30 +95,40 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public void crearEvento(EventoDTO eventoDTO){
+    public void crearEvento(EventoDTO eventoDTO)throws CamposVaciosException{
         Evento evento = eventoDTO.toEntity();
-        eventoDAO.insertar(evento);
+        if (evento.getNombre() != null && !evento.getNombre().isEmpty() && evento.getDescripcion() != null
+                && !evento.getDescripcion().isEmpty() && evento.getFecha() != null && !evento.getFecha().isEmpty()
+                && evento.getLugar() != null && !evento.getLugar().isEmpty() && evento.getCupo() != 0) {
+        	eventoDAO.insertar(evento);
+        } else {
+            throw new CamposVaciosException();
+        }
     }
    
     public void inscribirEvento(int id, String dni)
-            throws InscripcionInvalidaException{
+    		throws InscripcionInvalidaException, FechaInvalidaException{
         Evento evento = null;
         Usuario usuario = null;
         
         evento = eventoDAO.buscar(id);
         usuario = usuarioDAO.buscar(dni);
         
-        //CAMBIAR
         // Valida si el usuario no esta ya inscrito en la lista de invitados
-        if (!eventoDAO.validarInvitadoLista(evento, usuario)) {
-            // Valida que haya cupo para entrar al evento
-            if (eventoDAO.obtenerSaturacion(evento) < evento.getCupo()) {
-                eventoDAO.inscribirInvitado(evento, usuario);
+        if (eventoDAO.buscar(evento.getId()).compararConFechaActual()) {
+            // Valida si el usuario no esta ya inscrito en la lista de invitados
+            if (!eventoDAO.validarInvitadoLista(evento, usuario)) {
+                // Valida que haya cupo para entrar al evento
+                if (eventoDAO.obtenerSaturacion(evento) < evento.getCupo()) {
+                    eventoDAO.inscribirInvitado(evento, usuario);
+                } else {
+                    eventoDAO.inscribirEspera(evento, usuario);
+                }
             } else {
-                eventoDAO.inscribirEspera(evento, usuario);
+                throw new InscripcionInvalidaException();
             }
         } else {
-            throw new InscripcionInvalidaException();
+            throw new FechaInvalidaException();
         }
     }
 
@@ -171,8 +192,17 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public List<EventoDTO> buscarEvento(String attr) {
-        List<Evento> eventosBuscados = eventoDAO.buscarEventoPorTipoYDescripcion(attr);
+    public List<EventoDTO> buscarEventoPorTipo(String attr) {
+        List<Evento> eventosBuscados = eventoDAO.buscarEventoPorTipo(attr);
+        List<EventoDTO> eventosBuscadosDTO = new ArrayList<>();
+
+        for (Evento evento : eventosBuscados) {
+            eventosBuscadosDTO.add(new EventoDTO(evento));
+        }
+        return eventosBuscadosDTO;
+    }
+    public List<EventoDTO> buscarEventoPorDescripcion(String attr) {
+        List<Evento> eventosBuscados = eventoDAO.buscarEventoPorDescripcion(attr);
         List<EventoDTO> eventosBuscadosDTO = new ArrayList<>();
 
         for (Evento evento : eventosBuscados) {
@@ -182,11 +212,12 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public void cancelarEvento(int id)
+    public void cancelarEvento(int id, String dni)
             throws CancelacionInvalidaException {
+    
     	Evento evento = eventoDAO.buscar(id);
     	
-        if (evento !=null && eventoDAO.buscar(evento.getId()).compararConFechaActual()) {
+        if (evento !=null &&evento.getOrganizador().getDni().equals(dni)&& eventoDAO.buscar(evento.getId()).compararConFechaActual()) {
         	eventoDAO.borrar(evento);
         } else {
             throw new CancelacionInvalidaException();
@@ -194,10 +225,15 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO listo
-    public List<EventoDTO> listarEventoInscritoCelebrado() {
+    public List<EventoDTO> listarEventoInscritoCelebrado(String dni) {
         List<EventoDTO> eventosInscritosCelebrados = new ArrayList<EventoDTO>();
-        //MODIFICAR
-        Usuario usuario = null;
+    	Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
+        
         for (Evento evento : eventoDAO.listarEventoInscrito(usuario)) {
             if (!evento.compararConFechaActual()) {
                 eventosInscritosCelebrados.add(new EventoDTO(evento));
@@ -207,10 +243,14 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public List<EventoDTO> listarEventoInscritoPorCelebrar() {
+    public List<EventoDTO> listarEventoInscritoPorCelebrar(String dni) {
         List<EventoDTO> eventosInscritosPorCelebrar = new ArrayList<EventoDTO>();
-        //MODIFICAR
-        Usuario usuario = null;
+    	Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
         for (Evento evento : eventoDAO.listarEventoInscrito(usuario)) {
             if (evento.compararConFechaActual()) {
                 eventosInscritosPorCelebrar.add(new EventoDTO(evento));
@@ -220,10 +260,14 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public List<EventoDTO> listarEventoEsperaPorCelebrar() {
+    public List<EventoDTO> listarEventoEsperaPorCelebrar(String dni) {
         List<EventoDTO> eventosEsperaPorCelebrar = new ArrayList<EventoDTO>();
-        //MODIFICAR
-        Usuario usuario = null;
+        Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
         for (Evento evento : eventoDAO.listarEventoEspera(usuario)) {
             if (evento.compararConFechaActual()) {
                 eventosEsperaPorCelebrar.add(new EventoDTO(evento));
@@ -233,10 +277,14 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public List<EventoDTO> listarEventoEsperaCelebrado() {
+    public List<EventoDTO> listarEventoEsperaCelebrado(String dni) {
         List<EventoDTO> eventosEsperaCelebrado = new ArrayList<EventoDTO>();
-        //MODIFICAR
-        Usuario usuario = null;
+    	Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
         for (Evento evento : eventoDAO.listarEventoEspera(usuario)) {
             if (!evento.compararConFechaActual()) {
                 eventosEsperaCelebrado.add(new EventoDTO(evento));
@@ -246,10 +294,14 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public List<EventoDTO> listarEventoOrganizadoCelebrado() {
+    public List<EventoDTO> listarEventoOrganizadoCelebrado(String dni) {
         List<EventoDTO> eventosOrganizadosCelebrados = new ArrayList<EventoDTO>();
-        //MODIFICAR
-        Usuario usuario = null;
+    	Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
         for (Evento evento : eventoDAO.listarEventoOrganizado(usuario)) {
             if (!evento.compararConFechaActual()) {
                 eventosOrganizadosCelebrados.add(new EventoDTO(evento));
@@ -259,10 +311,14 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     }
 
     // DAO Listo
-    public List<EventoDTO> listarEventoOrganizadoPorCelebrar() {
+    public List<EventoDTO> listarEventoOrganizadoPorCelebrar(String dni) {
         List<EventoDTO> eventosOrganizadosPorCelebrar = new ArrayList<EventoDTO>();
-        //MODIFICAR
-        Usuario usuario = null;
+    	Usuario usuario = usuarioDAO.buscar(dni);
+    	UsuarioDTO usuarioDTO = null;
+    	
+    	if (usuario!=null) {
+    		usuarioDTO = new UsuarioDTO(usuario);
+		}
         for (Evento evento : eventoDAO.listarEventoOrganizado(usuario)) {
             if (evento.compararConFechaActual()) {
                 eventosOrganizadosPorCelebrar.add(new EventoDTO(evento));
