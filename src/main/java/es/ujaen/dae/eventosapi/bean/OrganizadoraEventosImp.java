@@ -25,6 +25,7 @@ import es.ujaen.dae.eventosapi.servicio.OrganizadoraEventosService;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Component
 public class OrganizadoraEventosImp implements OrganizadoraEventosService {
@@ -68,6 +69,8 @@ public class OrganizadoraEventosImp implements OrganizadoraEventosService {
     // DAO Listo
     public void registrarUsuario(UsuarioDTO usuarioDTO)throws CamposVaciosException{
         Usuario usuario = usuarioDTO.toEntity();
+        
+        usuario.setPassword(new BCryptPasswordEncoder().encode(usuario.getPassword()));
      // Valida campos vacios
         if (usuarioDTO.getDni() != null && !usuarioDTO.getDni().isEmpty() && usuarioDTO.getPassword() != null && !usuarioDTO.getPassword().isEmpty()
                 && usuarioDTO.getNombre() != null && !usuarioDTO.getNombre().isEmpty()) {

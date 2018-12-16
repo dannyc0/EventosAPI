@@ -40,23 +40,21 @@ public class EventoDAO {
     }
 
     // Buscar evento
-    @Cacheable
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-    public List<Evento> buscarEventoPorTipo(String attr) {
+    public List<Evento> buscarEventoPorTipo(String tipo) {
         List<Evento> eventosBuscados = em
                 .createQuery("SELECT e FROM Evento e WHERE e.tipo = :tipo", Evento.class)
-                .setParameter("tipo", attr).getResultList();
+                .setParameter("tipo", tipo).getResultList();
 
         return eventosBuscados;
     }
     
     // Buscar evento
-    @Cacheable
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-    public List<Evento> buscarEventoPorDescripcion(String attr) {
+    public List<Evento> buscarEventoPorDescripcion(String desc) {
         List<Evento> eventosBuscados = em
                 .createQuery("SELECT e FROM Evento e WHERE e.descripcion LIKE :desc", Evento.class)
-                .setParameter("desc", "%" + attr + "%").getResultList();
+                .setParameter("desc", "%" + desc + "%").getResultList();
 
         return eventosBuscados;
     }

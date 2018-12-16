@@ -2,6 +2,7 @@ package es.ujaen.dae.eventosapi.recursos;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.Link;
@@ -76,7 +77,7 @@ public class RecursoOrganizadoraEventos {
 		}
 	}
 	
-	//Obtener usuario
+	//Obtener usuario por DNI
 	@RequestMapping(value="/usuario/{dni}",method=RequestMethod.GET,produces="application/json")
 	public UsuarioDTO obtenerUsuario(@PathVariable String dni) throws UsuarioNoRegistradoNoEncontradoException, CamposVaciosException{
 		UsuarioDTO usuario = null;
@@ -92,22 +93,27 @@ public class RecursoOrganizadoraEventos {
 		return usuario;
 	}
 
-	//Buscar evento
+	//Buscar evento por tipo y descripcion
 	@RequestMapping(value="/eventos",method=RequestMethod.GET,produces="application/json")
-	public List<EventoDTO> obtenerEvento(@RequestParam(value="tipo", required = false) String tipo, 
-			@RequestParam(value="descripcion", required = false) String desc) 
+	public List<EventoDTO> obtenerEvento(@RequestParam("tipo") Optional<String> tipo, 
+			@RequestParam("descripcion") Optional<String> desc) 
 					throws EventoInexistenteException{
-		//if
-		List<EventoDTO> eventos = organizadoraEventos.buscarEventoPorTipo();
+		List<EventoDTO> eventos = new ArrayList<EventoDTO>();
+		if(tipo.isPresent()) {
+			eventos = organizadoraEventos.buscarEventoPorTipo(tipo.get());
+		}
+		
+		if(desc.isPresent()) {
+			eventos = organizadoraEventos.buscarEventoPorDescripcion(desc.get());
+		}
 		
 		if (eventos.isEmpty()) {
 			throw new EventoInexistenteException();
 		}
-		
 		return eventos;
 	}
 	
-	//Buscar evento
+	//Buscar evento por ID
 	@RequestMapping(value="/evento/{id}",method=RequestMethod.GET,produces="application/json")
 	public EventoDTO obtenerEventoPorId(@PathVariable String id) throws EventoInexistenteException, NumberFormatException{
 		int id_numero;

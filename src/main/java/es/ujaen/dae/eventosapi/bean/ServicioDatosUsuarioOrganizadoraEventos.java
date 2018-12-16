@@ -28,6 +28,6 @@ public class ServicioDatosUsuarioOrganizadoraEventos implements UserDetailsServi
 		if(usuario==null) {
 			throw new UsernameNotFoundException(username);
 		}
-		return User.withUsername(username).password(new BCryptPasswordEncoder().encode(usuario.getPassword()) ).roles("USUARIO").build();
+		return User.withUsername(username).password(usuario.getPassword() ).roles("USUARIO").build();
 	}
 }
