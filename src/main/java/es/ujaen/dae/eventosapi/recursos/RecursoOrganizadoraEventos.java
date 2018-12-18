@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,6 +40,7 @@ import es.ujaen.dae.eventosapi.modelo.Evento;
 import es.ujaen.dae.eventosapi.modelo.Usuario;
 import javassist.expr.NewArray;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/organizadoraeventos")
 public class RecursoOrganizadoraEventos {
@@ -94,6 +96,7 @@ public class RecursoOrganizadoraEventos {
 	}
 
 	//Buscar evento por tipo y descripcion
+	@CrossOrigin(origins="*", methods= {RequestMethod.GET}, maxAge=1800)
 	@RequestMapping(value="/eventos",method=RequestMethod.GET,produces="application/json")
 	public List<EventoDTO> obtenerEvento(@RequestParam("tipo") Optional<String> tipo, 
 			@RequestParam("descripcion") Optional<String> desc) 
