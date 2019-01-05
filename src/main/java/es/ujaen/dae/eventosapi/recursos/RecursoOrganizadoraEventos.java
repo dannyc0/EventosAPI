@@ -82,21 +82,32 @@ public class RecursoOrganizadoraEventos {
 	//Obtener usuario por DNI
 	@RequestMapping(value="/usuario/{dni}",method=RequestMethod.GET,produces="application/json")
 	public UsuarioDTO obtenerUsuario(@PathVariable String dni) throws UsuarioNoRegistradoNoEncontradoException, CamposVaciosException{
-		UsuarioDTO usuario = null;
+		String usuario;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (auth instanceof AnonymousAuthenticationToken) {
+			usuario = "anonimo";
+		}else {
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			usuario = userDetails.getUsername();
+		}
+		UsuarioDTO usuarioDTO = null;
 		try {
-			usuario = organizadoraEventos.obtenerUsuario(dni);
+			usuarioDTO = organizadoraEventos.obtenerUsuario(dni);
 		} catch (Exception e) {
 			throw new CamposVaciosException();
 		}
 		
-		if (usuario==null) {
+		if (usuarioDTO==null) {
+			throw new UsuarioNoRegistradoNoEncontradoException();
+		}if(usuario.equals(usuarioDTO.getDni())) {
+			return usuarioDTO;
+		}else {
 			throw new UsuarioNoRegistradoNoEncontradoException();
 		}
-		return usuario;
 	}
 
 	//Buscar evento por tipo y descripcion
-	@CrossOrigin(origins="*", methods= {RequestMethod.GET}, maxAge=1800)
 	@RequestMapping(value="/eventos",method=RequestMethod.GET,produces="application/json")
 	public List<EventoDTO> obtenerEvento(@RequestParam("tipo") Optional<String> tipo, 
 			@RequestParam("descripcion") Optional<String> desc) 
@@ -300,7 +311,6 @@ public class RecursoOrganizadoraEventos {
 		}else {
 			return organizadoraEventos.listarEventoEsperaPorCelebrar(usuario);
 		}
-	
 	}
 	
 	@RequestMapping(value="usuario/eventosorganizados",method=RequestMethod.GET,produces="application/json")
